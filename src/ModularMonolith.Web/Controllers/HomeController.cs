@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using ModularMonolith.Web.Models;
+using ModularMonolith.Web.Areas;
+using System.Diagnostics;
 
 namespace ModularMonolith.Web.Controllers
 {

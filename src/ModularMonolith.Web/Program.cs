@@ -1,29 +1,50 @@
-var builder = WebApplication.CreateBuilder(args);
+using ModularMonolith.Web.Configuration;
+using Serilog;
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .CreateLogger();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+try
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    Log.Information("Starting web host");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseDefaultServiceProvider(config => config.ValidateOnBuild = true);
+
+    builder.WebHost.UseKestrel(options => options.AddServerHeader = false);
+
+    builder.Host.UseSerilog((context, loggerConfiguration) =>
+    {
+        loggerConfiguration
+            .ReadFrom.Configuration(context.Configuration)
+            .Enrich.FromLogContext()
+            .WriteTo.Console();
+    });
+
+    builder.Logging.EnableEnrichment();
+    builder.Logging.EnableRedaction();
+
+    builder.Services.InstallServices(
+        builder.Configuration,
+        builder.Environment,
+        typeof(ApplicationConfiguration).Assembly);
+
+    var app = builder.Build();
+
+    await app.ConfigureAsync();
+
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Error(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
 }
 
-app.UseHttpsRedirection();
-app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapStaticAssets();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
-
-app.Run();
+public partial class Program;

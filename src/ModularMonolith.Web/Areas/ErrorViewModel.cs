@@ -1,4 +1,4 @@
-namespace ModularMonolith.Web.Models
+namespace ModularMonolith.Web.Areas
 {
     public class ErrorViewModel
     {
