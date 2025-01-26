@@ -18,7 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
-using ModularMonolith.Web.Areas.Identity.Data;
+using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account
 {

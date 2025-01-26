@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace ModularMonolith.Core.UserAggregate;
+namespace ModularMonolith.Users.Core.UserAggregate;
 
 public sealed class ApplicationUser : IdentityUser<Guid>
 {

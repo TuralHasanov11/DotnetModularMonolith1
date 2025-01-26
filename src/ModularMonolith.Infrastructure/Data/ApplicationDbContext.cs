@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using ModularMonolith.Core.RoleAggregate;
-using ModularMonolith.Core.UserAggregate;
+using ModularMonolith.Users.Core.RoleAggregate;
+using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Infrastructure.Data;
 

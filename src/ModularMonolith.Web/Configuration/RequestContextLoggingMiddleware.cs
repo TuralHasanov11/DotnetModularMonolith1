@@ -5,7 +5,7 @@ namespace ModularMonolith.Web.Configuration;
 
 public class RequestContextLoggingMiddleware : IMiddleware
 {
-    private const string _correlationIdHeaderName = "X-Correlation-Id";
+    private const string CorrelationIdHeaderName = "X-Correlation-Id";
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -19,7 +19,7 @@ public class RequestContextLoggingMiddleware : IMiddleware
 
     private static string GetCorrelationId(HttpContext context)
     {
-        context.Request.Headers.TryGetValue(_correlationIdHeaderName, out StringValues correlationId);
+        context.Request.Headers.TryGetValue(CorrelationIdHeaderName, out StringValues correlationId);
         return correlationId.SingleOrDefault() ?? context.TraceIdentifier;
     }
 }

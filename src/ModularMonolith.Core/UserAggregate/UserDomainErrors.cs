@@ -1,6 +1,6 @@
 ﻿using Ardalis.Result;
 
-namespace ModularMonolith.Core.UserAggregate;
+namespace ModularMonolith.Users.Core.UserAggregate;
 
 public static class UserDomainErrors
 {

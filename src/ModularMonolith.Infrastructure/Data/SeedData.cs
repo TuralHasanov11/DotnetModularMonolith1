@@ -2,8 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using ModularMonolith.Core.RoleAggregate;
-using ModularMonolith.Core.UserAggregate;
+using ModularMonolith.Users.Core.RoleAggregate;
+using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Infrastructure.Data;
 

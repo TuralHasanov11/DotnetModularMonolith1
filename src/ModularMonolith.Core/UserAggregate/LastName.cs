@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace ModularMonolith.Core.UserAggregate;
+namespace ModularMonolith.Users.Core.UserAggregate;
 
 public readonly partial struct LastName : IEquatable<LastName>
 {

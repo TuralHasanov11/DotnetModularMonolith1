@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using ModularMonolith.Core.RoleAggregate;
-using ModularMonolith.Core.UserAggregate;
-using ModularMonolith.Infrastructure.Data;
+﻿using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Identity;
+using ModularMonolith.Users.Core.RoleAggregate;
+using ModularMonolith.Users.Core.UserAggregate;
+using ModularMonolith.Users.Infrastructure.Data;
 using Serilog;
 
 namespace ModularMonolith.Web.Configuration;
@@ -20,51 +20,56 @@ public static class ApplicationConfiguration
             app.UseHsts();
         }
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.DisplayOperationId());
-
-            using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
-                await SeedData(app, scope);
-            }
-        }
+        app.UseHttpsRedirection();
+        app.UseStaticFiles();
 
         app.UseAntiforgery();
 
-        app.UseHttpsRedirection();
-
-        app.UseResponseCaching();
-        app.UseResponseCompression();
-        app.UseStaticFiles();
-
         app.UseRouting();
-
+        app.UseRateLimiter();
         app.UseRequestLocalization();
+        app.UseCors(Policies.DefaultCorsPolicy);
+
+        app.UseOutputCache();
+
+        app.MapOpenApi()
+                //.RequireAuthorization(Policies.ApiTesterPolicy)
+                .CacheOutput(Policies.OpenApiCachePolicy);
 
         app.UseRequestDecompression();
 
-        app.UseRateLimiter();
-
         app.UseAuthentication();
         app.UseAuthorization();
-
         app.UseSession();
+        app.UseResponseCompression();
+        app.UseResponseCaching();
+        app.MapStaticAssets();
+
+        app.MapRazorPages();
 
         app.UseMiddleware<RequestContextLoggingMiddleware>();
 
-        app.UseSerilogRequestLogging();
-        app.UseW3CLogging();
-
         if (app.Environment.IsDevelopment())
         {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.DisplayOperationId();
+                c.SwaggerEndpoint("/openapi/v1.json", "v1");
+            });
+
             app.UseMiddleware<RequestTimeLoggingMiddleware>();
+
+            using var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            await SeedData(app, scope);
         }
 
-        app.UseHealthChecks("/health");
 
-        app.MapStaticAssets();
+        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/live", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live"),
+        });
 
         app.MapControllerRoute(
             name: "default",
@@ -74,14 +79,13 @@ public static class ApplicationConfiguration
 
     private static async Task SeedData(WebApplication app, IServiceScope scope)
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.MigrateAsync();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
 
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-        await Infrastructure.Data.SeedData.EnsureSeedDataAsync(
+        await Users.Infrastructure.Data.SeedData.EnsureSeedDataAsync(
             dbContext,
             userManager,
             roleManager,

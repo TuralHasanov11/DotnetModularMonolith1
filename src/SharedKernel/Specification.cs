@@ -8,13 +8,15 @@ public abstract class Specification<TEntity>(
     bool criteriaCondition = true)
     where TEntity : class
 {
-    public bool IsSplitQuery { get; protected set; }
-
     private readonly List<Expression<Func<TEntity, bool>>> _criteria = criteria is null ? [] : [criteria];
+
     private readonly List<bool> _criteriaCondition = [criteriaCondition];
 
     public IReadOnlyList<Expression<Func<TEntity, bool>>> Criteria => _criteria.AsReadOnly();
+
     public IReadOnlyList<bool> CriteriaCondition => _criteriaCondition.AsReadOnly();
+
+    public bool IsSplitQuery { get; protected set; }
 
     public Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? IncludeExpression { get; protected set; }
 

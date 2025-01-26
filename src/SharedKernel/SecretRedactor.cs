@@ -1,19 +1,19 @@
 ﻿using Microsoft.Extensions.Compliance.Redaction;
 
-namespace SharedKernel.Security;
+namespace SharedKernel;
 
 public class SecretRedactor : Redactor
 {
-    private const string _secretValue = "*****";
+    private const string SecretValue = "*****";
 
     public override int GetRedactedLength(ReadOnlySpan<char> input)
     {
-        return _secretValue.Length;
+        return SecretValue.Length;
     }
 
     public override int Redact(ReadOnlySpan<char> source, Span<char> destination)
     {
-        _secretValue.CopyTo(destination);
-        return _secretValue.Length;
+        SecretValue.CopyTo(destination);
+        return SecretValue.Length;
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace ModularMonolith.Core.UserAggregate;
+﻿namespace ModularMonolith.Users.Core.UserAggregate;
 
 public readonly struct IdentityId : IEquatable<IdentityId>
 {

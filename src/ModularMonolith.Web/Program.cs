@@ -27,10 +27,7 @@ try
     builder.Logging.EnableEnrichment();
     builder.Logging.EnableRedaction();
 
-    builder.Services.InstallServices(
-        builder.Configuration,
-        builder.Environment,
-        typeof(ApplicationConfiguration).Assembly);
+    builder.Services.Install(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
 

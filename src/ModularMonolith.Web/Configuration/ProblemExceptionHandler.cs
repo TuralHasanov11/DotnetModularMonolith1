@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ModularMonolith.Web.Configuration;
 
-public class ProblemExceptionHandler(
+public partial class ProblemExceptionHandler(
     ILogger<ProblemExceptionHandler> logger,
     IProblemDetailsService problemDetailsService)
     : IExceptionHandler
@@ -17,7 +17,7 @@ public class ProblemExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _logger.LogProblemException(exception.Message, DateTime.UtcNow);
+        LogProblemException(_logger, exception.Message, DateTime.UtcNow);
 
         var problemDetails = new ProblemDetails
         {
@@ -34,10 +34,7 @@ public class ProblemExceptionHandler(
                 ProblemDetails = problemDetails,
             });
     }
-}
 
-public static partial class ProblemExceptionLogger
-{
     [LoggerMessage(LogLevel.Error, "Error Message: {Message}, Time of occurrence {Time}")]
-    public static partial void LogProblemException(this ILogger logger, string message, DateTime time);
+    public static partial void LogProblemException(ILogger<ProblemExceptionHandler> logger, string message, DateTime time);
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using ModularMonolith.Web.Areas.Identity.Data;
+using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
 {
