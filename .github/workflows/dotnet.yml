@@ -1,0 +1,34 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    - name: Restore dependencies
+      run: dotnet restore ./DotnetModularMonolith1.sln
+    - name: Build
+      run: dotnet build ./DotnetModularMonolith1.sln --configuration Release --no-restore
+    - name: Test
+      run: dotnet test ./DotnetModularMonolith1.sln --configuration Release --no-build --no-restore --verbosity normal
+    #- name: Create EF Migration Bundle
+    #  run: |
+    #    dotnet tool update --global dotnet-ef
+    #    dotnet ef migrations bundle --project ModularMonolith.Users.Infrastructure --startup-project  ModularMonolith.Web --output efbundle
+    #- name: Run EF Migrations
+    #  run: ./efbundle --connection "${{secrets.CONNECTION_STRINGS_DATABASE}}"
