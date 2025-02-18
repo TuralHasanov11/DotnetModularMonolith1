@@ -14,9 +14,6 @@ public static class DependencyInjection
         ConfigureDbContext(services, configuration, isDevelopmentEnvironment);
         ConfigureCqrs(services);
         ConfigureHealthChecks(services);
-
-
-
     }
 
     private static void ConfigureDbContext(

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.OpenApi.Models;
 using ModularMonolith.Users.Core.RoleAggregate;
 using ModularMonolith.Users.Core.UserAggregate;
@@ -14,7 +16,6 @@ using ModularMonolith.Users.Infrastructure.Data;
 using ModularMonolith.Users.Web;
 using Serilog;
 using SharedKernel;
-using System.IdentityModel.Tokens.Jwt;
 using System.IO.Compression;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -37,7 +38,6 @@ internal static class ServiceInstaller
         ConfigureOpenApi(services, configuration);
         ConfigureHsts(services);
         ConfigureAntiforgeryProtection(services);
-        ConfigureCookie(services, configuration);
         ConfigureCors(services, configuration);
         ConfigureDiagnostics(services, configuration);
         ConfigureResiliency(services);
@@ -45,6 +45,7 @@ internal static class ServiceInstaller
         ConfigureErrorHandling(services);
         ConfigureHost(services, configuration);
         ConfigureIdentity(services, configuration);
+        ConfigureCookie(services, configuration);
         ConfigureJson(services);
         ConfigureCache(services);
     }
@@ -86,7 +87,7 @@ internal static class ServiceInstaller
             options.Password.RequireUppercase = true;
             options.Password.RequiredLength = 8;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.MaxFailedAccessAttempts = 10;
             options.Lockout.AllowedForNewUsers = true;
             options.ClaimsIdentity.UserIdClaimType = JwtRegisteredClaimNames.Sub;
             options.ClaimsIdentity.UserNameClaimType = JwtRegisteredClaimNames.Name;
@@ -96,7 +97,8 @@ internal static class ServiceInstaller
            .AddEntityFrameworkStores<UsersDbContext>()
            .AddDefaultTokenProviders();
 
-        services.AddAuthentication();
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie();
 
         services.AddAuthorization(policyBuilder =>
         {
@@ -105,6 +107,10 @@ internal static class ServiceInstaller
                 .Build();
 
             policyBuilder.FallbackPolicy = policyBuilder.DefaultPolicy;
+
+            policyBuilder.AddPolicy(
+                Policies.ApiTesterPolicy,
+                policy => policy.RequireRole(ApplicationRoles.Administrator));
         });
     }
 
@@ -223,9 +229,9 @@ internal static class ServiceInstaller
 
         services.AddOpenApi(options =>
         {
-            options.UseDocumentDetails(openApiInfoOptions);
-            options.UseBearerSecurityScheme();
-            options.UseApiKeySecurityScheme();
+            options.UseDocumentDetails(openApiInfoOptions)
+                .UseBearerSecurityScheme()
+                .UseApiKeySecurityScheme();
         });
 
         services.AddSwaggerGen(options =>

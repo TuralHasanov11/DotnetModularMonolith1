@@ -34,6 +34,18 @@ dotnet stryker
 dotnet ef migrations add <migration_name> --project ../<ServiceName>.Infrastructure --startup-project . --output-dir Data/Migrations
 ```
 
+```sh	
+dotnet ef migrations add <migration_name> --output-dir Data/Migrations
+```
+
+```sh 
+ dotnet ef migrations bundle --project ModularMonolith.Users.Infrastructure --startup-project  ModularMonolith.Web --output efbundle
+```
+
+```sh 
+ dotnet ef migrations script --project ModularMonolith.Users.Infrastructure --startup-project  ModularMonolith.Web --output migrations.sql --idempotent
+```
+
 ### Format
 ```sh
 dotnet format ./AppSolution.sln
@@ -45,16 +57,6 @@ dotnet format ./AppSolution.sln
 dotnet test --filter <ServiceName>~.UnitTests --no-build --verbosity normal
 ```
 
-
-### CSS BEM
-```css
-.form { }
-.form--theme-xmas { }
-.form--simple { }
-.form__input { }
-.form__submit { }
-.form__submit--disabled { }
-```
 
 
 ### AI Prompt Engineering

@@ -16,7 +16,6 @@ public static class ApplicationConfiguration
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Home/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
 
@@ -31,10 +30,6 @@ public static class ApplicationConfiguration
         app.UseCors(Policies.DefaultCorsPolicy);
 
         app.UseOutputCache();
-
-        app.MapOpenApi()
-                //.RequireAuthorization(Policies.ApiTesterPolicy)
-                .CacheOutput(Policies.OpenApiCachePolicy);
 
         app.UseRequestDecompression();
 
@@ -51,25 +46,19 @@ public static class ApplicationConfiguration
 
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.DisplayOperationId();
-                c.SwaggerEndpoint("/openapi/v1.json", "v1");
-            });
+            app.MapOpenApi()
+               .RequireAuthorization(Policies.ApiTesterPolicy)
+               .CacheOutput(Policies.OpenApiCachePolicy);
+
+            app.WithSwagger();
 
             app.UseMiddleware<RequestTimeLoggingMiddleware>();
 
-            using var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            await SeedData(app, scope);
+            await app.InitializeDatabase();
         }
 
 
-        app.MapHealthChecks("/health");
-        app.MapHealthChecks("/live", new HealthCheckOptions
-        {
-            Predicate = r => r.Tags.Contains("live"),
-        });
+        app.WithHealthChecks();
 
         app.MapControllerRoute(
             name: "default",
@@ -77,19 +66,49 @@ public static class ApplicationConfiguration
             .WithStaticAssets();
     }
 
-    private static async Task SeedData(WebApplication app, IServiceScope scope)
+    internal static void WithSwagger(this WebApplication app)
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.DisplayOperationId();
+            c.SwaggerEndpoint("/openapi/v1.json", "v1");
+        });
+    }
+
+    internal static async Task InitializeDatabase(this WebApplication app)
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+
+        await InitializeUsersDatabase(app, scope);
+    }
+
+    private static async Task InitializeUsersDatabase(WebApplication app, AsyncServiceScope scope)
+    {
+        await using var usersDbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
 
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         await Users.Infrastructure.Data.SeedData.EnsureSeedDataAsync(
-            dbContext,
+            usersDbContext,
             userManager,
             roleManager,
             app.Configuration,
             logger);
     }
+
+    internal static IApplicationBuilder WithHealthChecks(this WebApplication app)
+    {
+        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/live", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live"),
+        });
+
+        return app;
+    }
 }
+
+

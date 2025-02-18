@@ -7,7 +7,7 @@ namespace ModularMonolith.Web.Configuration;
 
 public static class OpenApiTransformersExtensions
 {
-    private static OpenApiSecurityScheme JwtBearerScheme => new()
+    private static readonly OpenApiSecurityScheme JwtBearerScheme = new()
     {
         Type = SecuritySchemeType.Http,
         Name = "Authorization",
@@ -22,7 +22,7 @@ public static class OpenApiTransformersExtensions
         Description = "JWT Authorization: Bearer {token}",
     };
 
-    private static OpenApiSecurityScheme ApiKeyScheme => new()
+    private static readonly OpenApiSecurityScheme ApiKeyScheme = new()
     {
         Description = "API Key access to API",
         Name = "x-api-key",
@@ -55,7 +55,7 @@ public static class OpenApiTransformersExtensions
                 operation.Security = [
                     new OpenApiSecurityRequirement
                     {
-                        [jwtScheme] = [],
+                        { jwtScheme, []},
                     },
                 ];
             }
@@ -78,10 +78,25 @@ public static class OpenApiTransformersExtensions
             return Task.CompletedTask;
         });
 
+        options.AddOperationTransformer((operation, context, _) =>
+        {
+            //if (context.Description.ActionDescriptor.FilterDescriptors.OfType<ApiKeyEndpointFilter>().Any())
+            //{
+            //    operation.Security = [
+            //        new OpenApiSecurityRequirement
+            //        {
+            //            { apiKeyScheme, []},
+            //        },
+            //    ];
+            //}
+
+            return Task.CompletedTask;
+        });
+
         return options;
     }
 
-    public static void UseDocumentDetails(this OpenApiOptions options, OpenApiInfo openApiInfoOptions)
+    public static OpenApiOptions UseDocumentDetails(this OpenApiOptions options, OpenApiInfo openApiInfoOptions)
     {
         options.AddDocumentTransformer((document, _, _) =>
         {
@@ -104,5 +119,7 @@ public static class OpenApiTransformersExtensions
             };
             return Task.CompletedTask;
         });
+
+        return options;
     }
 }

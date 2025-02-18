@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ModularMonolith.Web.Configuration;
 
-public partial class ProblemExceptionHandler(
+public class ProblemExceptionHandler(
     ILogger<ProblemExceptionHandler> logger,
     IProblemDetailsService problemDetailsService)
     : IExceptionHandler
@@ -17,14 +17,17 @@ public partial class ProblemExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
-        LogProblemException(_logger, exception.Message, DateTime.UtcNow);
+        _logger.LogProblemException(exception.Message, DateTime.UtcNow);
 
         var problemDetails = new ProblemDetails
         {
-            Status = StatusCodes.Status500InternalServerError,
-            Title = "Server Error",
+            Status = exception switch
+            {
+                _ => StatusCodes.Status500InternalServerError
+            },
+            Title = exception.Message,
             Detail = exception.Message,
-            Type = "Server Error",
+            Type = exception.GetType().Name
         };
 
         return await _problemDetailsService.TryWriteAsync(
@@ -34,7 +37,11 @@ public partial class ProblemExceptionHandler(
                 ProblemDetails = problemDetails,
             });
     }
+}
 
-    [LoggerMessage(LogLevel.Error, "Error Message: {Message}, Time of occurrence {Time}")]
-    public static partial void LogProblemException(ILogger<ProblemExceptionHandler> logger, string message, DateTime time);
+
+public static partial class ProblemExceptionHandlerLogger
+{
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error Message: {Message}, Time of occurrence {Time}")]
+    public static partial void LogProblemException(this ILogger<ProblemExceptionHandler> logger, string message, DateTime time);
 }
