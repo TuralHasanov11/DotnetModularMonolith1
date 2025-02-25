@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ModularMonolith.Users.Core.RoleAggregate;
 using ModularMonolith.Users.Core.UserAggregate;
+using SharedKernel;
 
 namespace ModularMonolith.Users.Infrastructure.Data;
 
@@ -11,6 +12,8 @@ public class UsersDbContext(DbContextOptions<UsersDbContext> options)
         ApplicationRoleClaim, ApplicationUserToken>(options)
 {
     public const string Schema = "Users";
+
+    public DbSet<AuditEntry> AuditEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

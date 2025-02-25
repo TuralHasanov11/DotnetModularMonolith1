@@ -3,9 +3,10 @@
 namespace SharedKernel;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-public class PersonalDataAttribute : DataClassificationAttribute
+public sealed class PersonalDataAttribute : DataClassificationAttribute
 {
-    public PersonalDataAttribute() : base(ApplicationLoggingTaxonomy.PersonalData)
+    public PersonalDataAttribute()
+        : base(ApplicationLoggingTaxonomy.PersonalData)
     {
     }
 }

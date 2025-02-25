@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Compliance.Classification;
@@ -12,14 +14,21 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.OpenApi.Models;
 using ModularMonolith.Users.Core.RoleAggregate;
 using ModularMonolith.Users.Core.UserAggregate;
+using ModularMonolith.Users.Infrastructure;
 using ModularMonolith.Users.Infrastructure.Data;
 using ModularMonolith.Users.Web;
+using Npgsql;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using SharedKernel;
 using System.IO.Compression;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Channels;
 using System.Threading.RateLimiting;
 
 namespace ModularMonolith.Web.Configuration;
@@ -31,23 +40,82 @@ internal static class ServiceInstaller
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
-        services.InstallUsersModuleServices(configuration, environment.IsDevelopment());
-
         ConfigureCompression(services);
         ConfigureEndpoints(services);
         ConfigureOpenApi(services, configuration);
         ConfigureHsts(services);
         ConfigureAntiforgeryProtection(services);
         ConfigureCors(services, configuration);
-        ConfigureDiagnostics(services, configuration);
+        ConfigureDiagnostics(services, configuration, environment);
         ConfigureResiliency(services);
         ConfigureInternationalization(services);
         ConfigureErrorHandling(services);
         ConfigureHost(services, configuration);
+        ConfigureDbContext(services, configuration, environment);
         ConfigureIdentity(services, configuration);
         ConfigureCookie(services, configuration);
         ConfigureJson(services);
         ConfigureCache(services);
+        ConfigureMessaging(services, configuration);
+        ConfigureEmail(services, configuration);
+        ConfigureCqrs(services);
+        ConfigureHealthChecks(services);
+    }
+
+    private static void ConfigureDbContext(
+        IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
+    {
+        var connectionString = configuration.GetConnectionString("Database")
+            ?? throw new InvalidOperationException("Connection string 'Database' not found.");
+
+        services.ConfigureUsersDbContext(connectionString, environment.IsDevelopment());
+    }
+
+    private static void ConfigureCqrs(IServiceCollection services)
+    {
+        services.AddMediatR(config
+            => config.RegisterServicesFromAssemblies(Users.UseCases.AssemblyReference.Assembly));
+    }
+
+    private static void ConfigureHealthChecks(IServiceCollection services)
+    {
+        services.AddHealthChecks()
+            .AddDbContextCheck<UsersDbContext>();
+    }
+
+    private static void ConfigureEmail(IServiceCollection services, IConfiguration configuration)
+    {
+        var emailSettings = configuration.GetSection("Email").Get<EmailSettings>();
+        ArgumentNullException.ThrowIfNull(emailSettings);
+        services.AddFluentEmail(emailSettings.SenderEmail, emailSettings.Sender)
+                .AddSmtpSender(emailSettings.Host, emailSettings.Port);
+
+        services.AddScoped<IEmailSender, EmailSender>();
+    }
+
+    private static void ConfigureMessaging(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddMassTransit(options =>
+        {
+            options.SetKebabCaseEndpointNameFormatter();
+
+            options.AddConsumers(AssemblyReference.Assembly);
+
+            options.UsingRabbitMq((context, config) =>
+            {
+                var settings = context.GetRequiredService<MessageBrokerSettings>();
+
+                config.Host(new Uri(settings.Host), h =>
+                {
+                    h.Username(settings.Username);
+                    h.Password(settings.Password);
+                });
+
+                config.ConfigureEndpoints(context);
+            });
+        });
     }
 
     private static void ConfigureCache(IServiceCollection services)
@@ -112,6 +180,15 @@ internal static class ServiceInstaller
                 Policies.ApiTesterPolicy,
                 policy => policy.RequireRole(ApplicationRoles.Administrator));
         });
+
+        services.AddHostedService<EmailProcessor>();
+
+        services.AddSingleton<Channel<EmailRequest>>(
+            _ => Channel.CreateUnbounded<EmailRequest>(new UnboundedChannelOptions
+            {
+                SingleReader = true,
+                AllowSynchronousContinuations = false,
+            }));
     }
 
     private static void ConfigureHost(IServiceCollection services, IConfiguration configuration)
@@ -240,7 +317,7 @@ internal static class ServiceInstaller
         });
     }
 
-    private static void ConfigureDiagnostics(IServiceCollection services, IConfiguration configuration)
+    private static void ConfigureDiagnostics(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
         services.AddSerilog((_, config) =>
         {
@@ -267,10 +344,80 @@ internal static class ServiceInstaller
 
         services.AddScoped<RequestContextLoggingMiddleware>();
         services.AddScoped<RequestTimeLoggingMiddleware>();
+
+        services.AddLogging(config =>
+        {
+            config.AddOpenTelemetry(o =>
+            {
+                o.SetResourceBuilder(
+                    ResourceBuilder.CreateDefault()
+                        .AddService(DiagnosticsConfiguration.ServiceName))
+                .AddOtlpExporter();
+            });
+        });
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource =>
+            {
+                resource.AddService(
+                        DiagnosticsConfiguration.ServiceName,
+                        serviceInstanceId: Environment.MachineName)
+                    .AddAttributes(new Dictionary<string, object>
+                    {
+                        ["service.name"] = "ModularMonolith",
+                        // endpoint and protocol are optional
+                    });
+            })
+            .WithMetrics(b =>
+            {
+                b.AddRuntimeInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddMeter(
+                        DiagnosticsConfiguration.Meter.Name,
+                        MassTransit.Monitoring.InstrumentationOptions.MeterName, // MassTransit Meter
+                        "Microsoft.AspNetCore.Hosting",
+                        "System.Net.Http",
+                        "Microsoft.AspNetCore.Server.Kestrel",
+                        "ModularMonolith.Web")
+                    .AddOtlpExporter(options =>
+                    {
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                    });
+            })
+            .WithTracing(b =>
+            {
+                b.AddSource(DiagnosticsConfiguration.Source.Name)
+                    .AddSource(MassTransit.Logging.DiagnosticHeaders.DefaultListenerName) // MassTransit ActivitySource
+                    .AddNpgsql()
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter(options =>
+                    {
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                    });
+
+                if (environment.IsDevelopment())
+                {
+                    b.SetSampler<AlwaysOnSampler>();
+                }
+            });
     }
 
     private static void ConfigureResiliency(IServiceCollection services)
     {
+        services.AddLoadShedding((provider, options) =>
+        {
+            options.SubscribeEvents(events =>
+            {
+                events.ItemEnqueued.Subscribe(LoadShedding.SubscribeToItemEnqueued);
+                events.ItemDequeued.Subscribe(LoadShedding.SubscribeToItemDequeued);
+                events.ItemProcessing.Subscribe(LoadShedding.SubscribeToItemProcessing);
+                events.ItemProcessed.Subscribe(LoadShedding.SubscribeToItemProcessed);
+                events.Rejected.Subscribe(LoadShedding.SubscribeToRejected);
+            });
+        });
+
         services.AddRequestTimeouts(options =>
         {
             options.DefaultPolicy = new RequestTimeoutPolicy

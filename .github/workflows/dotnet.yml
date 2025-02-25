@@ -20,6 +20,8 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+    - name: Display .NET version
+      run: dotnet --version
     - name: Restore dependencies
       run: dotnet restore ./DotnetModularMonolith1.sln
     - name: Build

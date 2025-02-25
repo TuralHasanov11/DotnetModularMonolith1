@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using SharedKernel;
 
 namespace ModularMonolith.Users.Infrastructure.Data;
 
@@ -11,15 +13,19 @@ public static class UsersDbContextExtensions
         string connectionString,
         bool isDevelopmentEnvironment)
     {
-        services.AddDbContext<UsersDbContext>((_, options) =>
+        services.AddKeyedScoped<List<AuditEntry>>("Audit", (_, _) => []);
+
+        services.AddDbContext<UsersDbContext>((sp, options) =>
         {
             options.UseNpgsql(
                 connectionString,
                 npgsqlOptionsAction => npgsqlOptionsAction.MigrationsHistoryTable(
                     HistoryRepository.DefaultTableName,
                     UsersDbContext.Schema))
-                .AddInterceptors(new AuditInterceptor());
-            // TODO: AuditInterceptor is not implemented yet
+                .AddInterceptors(
+                    new AuditInterceptor(
+                        sp.GetRequiredKeyedService<List<AuditEntry>>("Audit"),
+                        sp.GetRequiredService<IPublishEndpoint>()));
 
             if (isDevelopmentEnvironment)
             {
@@ -27,5 +33,6 @@ public static class UsersDbContextExtensions
                     .EnableDetailedErrors();
             }
         });
+
     }
 }

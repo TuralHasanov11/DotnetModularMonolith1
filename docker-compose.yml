@@ -1,0 +1,24 @@
+services:
+  modularmonolith.web:
+    image: ${DOCKER_REGISTRY-}modularmonolithweb
+    container_name: modularmonolith.web
+    build:
+      context: .
+      dockerfile: src/ModularMonolith.Web/Dockerfile
+    ports:
+     - "5100:5100"
+     - "5101:5101"
+    networks:
+      - dotnetmodularmonolith
+  modularmonolith.papercut:
+    image: changemakerstudiosus/papercut-smtp:latest
+    container_name: "modularmonolith.papercut"
+    ports:
+      - "8080:80"
+      - "25:25"
+
+
+networks:
+  dotnetmodularmonolith:
+    name: dotnetmodularmonolith
+    driver: bridge

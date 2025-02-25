@@ -6,7 +6,7 @@ public readonly struct IdentityId : IEquatable<IdentityId>
 
     public IdentityId()
     {
-        Value = Guid.NewGuid();
+        Value = Guid.CreateVersion7();
     }
 
     private IdentityId(Guid value)

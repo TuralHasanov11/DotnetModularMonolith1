@@ -1,11 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SharedKernel;
 
 namespace ModularMonolith.Users.Infrastructure.Data;
 
-public class AuditInterceptor : SaveChangesInterceptor
+public class AuditInterceptor(List<AuditEntry> auditEntryList, IPublishEndpoint publishEndpoint) : SaveChangesInterceptor
 {
+    private readonly List<AuditEntry> _auditEntries = auditEntryList;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -13,35 +17,78 @@ public class AuditInterceptor : SaveChangesInterceptor
     {
         if (eventData.Context is not null)
         {
-            var entries = eventData.Context.ChangeTracker
-                .Entries<AuditableEntity>()
-                .Where(e =>
-                    e.State == EntityState.Added ||
-                    (e.State == EntityState.Modified ||
-                    e.References.Any(r => r.TargetEntry?.Metadata.IsOwned() == true &&
-                                    (r.TargetEntry.State == EntityState.Added ||
-                                    r.TargetEntry.State == EntityState.Modified))));
+            var startTime = DateTime.UtcNow;
 
-            foreach (var entity in entries)
+            var auditEntries = eventData.Context.ChangeTracker
+                .Entries()
+                .Where(e =>
+                    e.Entity is not AuditEntry &&
+                    (e.State == EntityState.Added
+                        || (e.State == EntityState.Modified || e.References.Any(r => r.TargetEntry?.Metadata.IsOwned() == true &&
+                                    (r.TargetEntry.State == EntityState.Added ||
+                                    r.TargetEntry.State == EntityState.Modified)))))
+                .Select(x => new AuditEntry
+                {
+                    Id = Guid.CreateVersion7(),
+                    StartTimeUtc = startTime,
+                    Metadata = x.DebugView.LongView,
+                }).ToList();
+
+            if (auditEntries.Count != 0)
             {
-                if (entity.State is EntityState.Added)
-                {
-                    entity.Property(e => e.CreatedOnUtc).CurrentValue = DateTime.UtcNow;
-                    entity.Property(e => e.UpdatedOnUtc).CurrentValue = DateTime.UtcNow;
-                    entity.Property(e => e.CreatedByUserId).CurrentValue = "";
-                    entity.Property(e => e.UpdatedByUserId).CurrentValue = "";
-                    entity.Property(e => e.CreatedByUserName).CurrentValue = "";
-                    entity.Property(e => e.UpdatedByUserName).CurrentValue = "";
-                }
-                else
-                {
-                    entity.Property(e => e.UpdatedOnUtc).CurrentValue = DateTime.UtcNow;
-                    entity.Property(e => e.UpdatedByUserId).CurrentValue = "";
-                    entity.Property(e => e.UpdatedByUserName).CurrentValue = "";
-                }
+                _auditEntries.AddRange(auditEntries);
             }
         }
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
+
+    public override async ValueTask<int> SavedChangesAsync(
+        SaveChangesCompletedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        if (eventData.Context is not null)
+        {
+            var endTime = DateTime.UtcNow;
+
+            foreach (var item in _auditEntries)
+            {
+                item.EndTimeUtc = endTime;
+                item.Succeeded = true;
+            }
+
+            if (_auditEntries.Count > 0)
+            {
+                _auditEntries.Clear();
+                await _publishEndpoint.Publish(new AuditTrailMessage { Entries = _auditEntries }, cancellationToken);
+            }
+        }
+
+        return await base.SavedChangesAsync(eventData, result, cancellationToken);
+    }
+
+    public override async Task SaveChangesFailedAsync(
+        DbContextErrorEventData eventData,
+        CancellationToken cancellationToken = default)
+    {
+        if (eventData.Context is not null)
+        {
+            var endTime = DateTime.UtcNow;
+
+            foreach (var item in _auditEntries)
+            {
+                item.EndTimeUtc = endTime;
+                item.Succeeded = false;
+                item.ErrorMessage = eventData.Exception.Message;
+            }
+
+            if (_auditEntries.Count > 0)
+            {
+                _auditEntries.Clear();
+                await _publishEndpoint.Publish(new AuditTrailMessage { Entries = _auditEntries }, cancellationToken);
+            }
+        }
+    }
 }
+
