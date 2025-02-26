@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using ModularMonolith.Users.Core.UserAggregate;
+using ModularMonolith.Web.Configuration;
 using System.ComponentModel.DataAnnotations;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account
@@ -110,7 +111,16 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User logged in.");
+                    var user = await _signInManager.UserManager.FindByNameAsync(Input.Email);
+
+                    if (user is null)
+                    {
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
+
+                    _logger.LogUserLoggedIn();
+                    AddUsersMetrics(user.Id);
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
@@ -119,7 +129,7 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
                 }
                 if (result.IsLockedOut)
                 {
-                    _logger.LogWarning("User account locked out.");
+                    _logger.LogUserAccountLockedOut(Input.Email);
                     return RedirectToPage("./Lockout");
                 }
                 else
@@ -132,5 +142,20 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
             // If we got this far, something failed, redisplay form
             return Page();
         }
+
+        private static void AddUsersMetrics(Guid userId)
+        {
+            var labels = new KeyValuePair<string, object?>(DiagnosticsConfiguration.Names.UserId, userId);
+            DiagnosticsConfiguration.UsersLoginCount.Add(1, labels);
+        }
+    }
+
+    internal static partial class LoginLogs
+    {
+        [LoggerMessage(LogLevel.Information, "User logged in.")]
+        public static partial void LogUserLoggedIn(this ILogger<LoginModel> logger);
+
+        [LoggerMessage(LogLevel.Warning, "User account with email {Email} locked out.")]
+        public static partial void LogUserAccountLockedOut(this ILogger<LoginModel> logger, string email);
     }
 }

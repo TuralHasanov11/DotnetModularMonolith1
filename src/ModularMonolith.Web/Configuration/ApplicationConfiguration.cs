@@ -22,7 +22,7 @@ public static class ApplicationConfiguration
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
-        app.UseAntiforgery();
+        //app.UseAntiforgery();
 
         app.UseRouting();
         app.UseRateLimiter();
@@ -89,7 +89,7 @@ public static class ApplicationConfiguration
 
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<SeedData>>();
 
         await Users.Infrastructure.Data.SeedData.EnsureSeedDataAsync(
             usersDbContext,

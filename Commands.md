@@ -31,7 +31,7 @@ dotnet stryker
 
 ### Create Migration
 ```sh	
-dotnet ef migrations add <migration_name> --project ../<ServiceName>.Infrastructure --startup-project . --output-dir Data/Migrations
+dotnet ef migrations add <migration_name> --project ../ModularMonolith.Users.Infrastructure --startup-project . --output-dir Data/Migrations
 ```
 
 ```sh	

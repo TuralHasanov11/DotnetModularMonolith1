@@ -10,6 +10,7 @@ public static class DiagnosticsConfiguration
     public static readonly Meter Meter = new(ServiceName);
 
     public static readonly Counter<long> UsersCount = Meter.CreateCounter<long>("users.count");
+    public static readonly Counter<long> UsersLoginCount = Meter.CreateCounter<long>("users.login_count");
 
     public static readonly ActivitySource Source = new(ServiceName);
 

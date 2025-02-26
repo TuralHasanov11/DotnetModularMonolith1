@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using ModularMonolith.Users.Core.UserAggregate;
 using ModularMonolith.Users.Infrastructure;
+using ModularMonolith.Web.Configuration;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -115,7 +116,8 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User created a new account with password.");
+                    _logger.LogUserCreatedAccountWithPassword();
+                    AddUsersMetrics(user.Id);
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -174,5 +176,17 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
             }
             return (IUserEmailStore<ApplicationUser>)_userStore;
         }
+
+        private static void AddUsersMetrics(Guid userId)
+        {
+            var labels = new KeyValuePair<string, object?>(DiagnosticsConfiguration.Names.UserId, userId);
+            DiagnosticsConfiguration.UsersCount.Add(1, labels);
+        }
+    }
+
+    internal static partial class RegisterLogs
+    {
+        [LoggerMessage(LogLevel.Information, "User created a new account with password.")]
+        public static partial void LogUserCreatedAccountWithPassword(this ILogger<RegisterModel> logger);
     }
 }

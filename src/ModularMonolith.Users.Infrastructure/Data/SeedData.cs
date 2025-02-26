@@ -7,15 +7,19 @@ using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Users.Infrastructure.Data;
 
-public static class SeedData
+public class SeedData
 {
     public static async ValueTask EnsureSeedDataAsync(
         UsersDbContext dbContext,
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
         IConfiguration configuration,
-        ILogger logger)
+        ILogger<SeedData> logger)
     {
+        var isCreated = await dbContext.Database.EnsureCreatedAsync();
+
+        logger.LogInformation("Database created: {IsCreated}", isCreated);
+
         await dbContext.Database.MigrateAsync();
 
         await AddRoles(roleManager, logger);
@@ -29,39 +33,42 @@ public static class SeedData
         IConfiguration configuration,
         ILogger logger)
     {
-        var userName = UserName.From(configuration["Admin:UserName"]!);
-
-        var admin = await userManager.FindByNameAsync(userName);
-        if (admin is null)
+        if (configuration["Admin"] is not null)
         {
             var email = Email.From(configuration["Admin:Email"]!);
-            var firstName = FirstName.From(configuration["Admin:FirstName"]!);
-            var lastName = LastName.From(configuration["Admin:LastName"]!);
-            var password = configuration["Admin:Password"];
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(password);
-
-            admin = ApplicationUser.Create(userName, email, firstName, lastName);
-
-            admin.ConfirmEmail();
-
-            var result = await userManager.CreateAsync(admin, password);
-
-            if (!result.Succeeded)
+            var admin = await userManager.FindByEmailAsync(email);
+            if (admin is null)
             {
-                throw new InvalidOperationException(result.Errors.First().Description);
+                var userName = UserName.From(configuration["Admin:UserName"]!);
+                var firstName = FirstName.From(configuration["Admin:FirstName"]!);
+                var lastName = LastName.From(configuration["Admin:LastName"]!);
+                var password = configuration["Admin:Password"];
+
+                ArgumentException.ThrowIfNullOrWhiteSpace(password);
+
+                admin = ApplicationUser.Create(userName, email, firstName, lastName);
+
+                admin.ConfirmEmail();
+
+                var result = await userManager.CreateAsync(admin, password);
+
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(result.Errors.First().Description);
+                }
+
+                await userManager.AddToRoleAsync(admin, ApplicationRoles.Administrator);
+                await userManager.AddToRoleAsync(admin, ApplicationRoles.Instructor);
+                await userManager.AddToRoleAsync(admin, ApplicationRoles.Student);
+                await userManager.AddToRoleAsync(admin, ApplicationRoles.Editor);
+
+                logger.LogInformation("Admin with Email = {Email} created", email);
             }
-
-            await userManager.AddToRoleAsync(admin, ApplicationRoles.Administrator);
-            await userManager.AddToRoleAsync(admin, ApplicationRoles.Instructor);
-            await userManager.AddToRoleAsync(admin, ApplicationRoles.Student);
-            await userManager.AddToRoleAsync(admin, ApplicationRoles.Editor);
-
-            logger.LogDebug("Admin with Name = {UserName} created", userName);
-        }
-        else
-        {
-            logger.LogDebug("Admin with Name = {UserName} created", userName);
+            else
+            {
+                logger.LogInformation("Admin with Email = {Email} already exists", email);
+            }
         }
     }
 
@@ -93,7 +100,7 @@ public static class SeedData
                     throw new InvalidOperationException(result.Errors.First().Description);
                 }
 
-                logger.LogDebug("Role with Name = {Role} created", roleName);
+                logger.LogInformation("Role with Name = {Role} created", roleName);
             }
             catch (Exception ex)
             {
@@ -102,7 +109,7 @@ public static class SeedData
         }
         else
         {
-            logger.LogDebug("Role with Name = {Role} already exists", roleName);
+            logger.LogInformation("Role with Name = {Role} already exists", roleName);
         }
     }
 }

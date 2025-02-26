@@ -3,7 +3,6 @@ using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .WriteTo.Console()
     .CreateLogger();
 
 try
@@ -15,14 +14,6 @@ try
     builder.Host.UseDefaultServiceProvider(config => config.ValidateOnBuild = true);
 
     builder.WebHost.UseKestrel(options => options.AddServerHeader = false);
-
-    builder.Host.UseSerilog((context, loggerConfiguration) =>
-    {
-        loggerConfiguration
-            .ReadFrom.Configuration(context.Configuration)
-            .Enrich.FromLogContext()
-            .WriteTo.Console();
-    });
 
     builder.Logging.EnableEnrichment();
     builder.Logging.EnableRedaction();

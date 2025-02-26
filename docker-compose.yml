@@ -8,8 +8,15 @@ services:
     ports:
      - "5100:5100"
      - "5101:5101"
-    networks:
-      - dotnetmodularmonolith
+    # networks:
+    #   - dotnetmodularmonolith
+    depends_on:
+     - modularmonolith.database
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://modularmonolith.seq:5341/ingest/otlp/v1/traces
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_HEADERS="X-Seq-ApiKey=XMdIiVvcRbsIkFf2U7DQ"
+
   modularmonolith.papercut:
     image: changemakerstudiosus/papercut-smtp:latest
     container_name: "modularmonolith.papercut"
@@ -17,8 +24,59 @@ services:
       - "8080:80"
       - "25:25"
 
+  modularmonolith.seq:
+    image: datalust/seq:latest
+    container_name: "modularmonolith.seq"
+    volumes:
+      - ./.containers/seq:/data
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:5341"
+      - "8081:80"
+    # networks:
+    #   - dotnetmodularmonolith
 
-networks:
-  dotnetmodularmonolith:
-    name: dotnetmodularmonolith
-    driver: bridge
+  modularmonolith.database:
+    image: postgres:latest
+    container_name: "modularmonolith.database"
+    environment:
+      - POSTGRES_DB=modularmonolith
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./.containers/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  modularmonolith.pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: "modularmonolith.pgadmin"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@modularmonolith.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+    ports:
+      - "5050:80"
+    volumes:
+      - ./.containers/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - modularmonolith.database
+
+  modularmonolith.rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: "modularmonolith.rabbitmq"
+    hostname: "modularmonolith.rabbitmq"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - ./.containers/queue/data:/var/lib/rabbitmq
+      - ./.containers/queue/log:/var/log/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+
+# networks:
+#   dotnetmodularmonolith:
+#     name: dotnetmodularmonolith
+#     driver: bridge

@@ -19,6 +19,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Telemetry" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
@@ -32,6 +33,8 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Extensions.Logging.File" />
     <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 

@@ -15,6 +15,12 @@ WORKDIR /src
 COPY ["Directory.Packages.props", "."]
 COPY ["Directory.Build.props", "."]
 COPY ["src/ModularMonolith.Web/ModularMonolith.Web.csproj", "src/ModularMonolith.Web/"]
+COPY ["src/ModularMonolith.Users.Contracts/ModularMonolith.Users.Contracts.csproj", "src/ModularMonolith.Users.Contracts/"]
+COPY ["src/SharedKernel/SharedKernel.csproj", "src/SharedKernel/"]
+COPY ["src/ModularMonolith.Users.Core/ModularMonolith.Users.Core.csproj", "src/ModularMonolith.Users.Core/"]
+COPY ["src/ModularMonolith.Users.Infrastructure/ModularMonolith.Users.Infrastructure.csproj", "src/ModularMonolith.Users.Infrastructure/"]
+COPY ["src/ModularMonolith.Users.UseCases/ModularMonolith.Users.UseCases.csproj", "src/ModularMonolith.Users.UseCases/"]
+COPY ["src/ModularMonolith.Users.Web/ModularMonolith.Users.Web.csproj", "src/ModularMonolith.Users.Web/"]
 RUN dotnet restore "./src/ModularMonolith.Web/ModularMonolith.Web.csproj"
 COPY . .
 WORKDIR "/src/src/ModularMonolith.Web"

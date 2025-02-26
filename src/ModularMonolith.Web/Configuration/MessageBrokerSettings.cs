@@ -11,9 +11,6 @@ public class MessageBrokerSettings
     public string Host { get; set; } = string.Empty;
 
     [Required]
-    public string Port { get; set; } = string.Empty;
-
-    [Required]
     public string Username { get; set; } = string.Empty;
 
     [Required]

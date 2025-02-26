@@ -1,6 +1,5 @@
 ﻿using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Identity;
@@ -10,6 +9,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.OpenApi.Models;
 using ModularMonolith.Users.Core.RoleAggregate;
@@ -97,6 +97,15 @@ internal static class ServiceInstaller
 
     private static void ConfigureMessaging(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<MessageBrokerSettings>()
+            .Bind(configuration.GetSection(MessageBrokerSettings.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IValidateOptions<MessageBrokerSettings>, ValidateMessageBrokerSettings>();
+
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<MessageBrokerSettings>>().Value);
+
         services.AddMassTransit(options =>
         {
             options.SetKebabCaseEndpointNameFormatter();
@@ -124,6 +133,10 @@ internal static class ServiceInstaller
         {
             options.AddPolicy(Policies.OpenApiCachePolicy, policy => policy.Expire(TimeSpan.FromMinutes(1)));
         });
+
+#pragma warning disable EXTEXP0018 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        services.AddHybridCache();
+#pragma warning restore EXTEXP0018 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     }
 
     private static void ConfigureJson(IServiceCollection services)
@@ -147,7 +160,8 @@ internal static class ServiceInstaller
     {
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
-            options.SignIn.RequireConfirmedAccount = true;
+            options.SignIn.RequireConfirmedAccount = false;
+            options.SignIn.RequireConfirmedEmail = false;
             options.User.RequireUniqueEmail = true;
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
@@ -165,16 +179,13 @@ internal static class ServiceInstaller
            .AddEntityFrameworkStores<UsersDbContext>()
            .AddDefaultTokenProviders();
 
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie();
-
         services.AddAuthorization(policyBuilder =>
         {
-            policyBuilder.DefaultPolicy = new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .Build();
+            //policyBuilder.DefaultPolicy = new AuthorizationPolicyBuilder()
+            //    .RequireAuthenticatedUser()
+            //    .Build();
 
-            policyBuilder.FallbackPolicy = policyBuilder.DefaultPolicy;
+            //policyBuilder.FallbackPolicy = policyBuilder.DefaultPolicy;
 
             policyBuilder.AddPolicy(
                 Policies.ApiTesterPolicy,
@@ -270,12 +281,13 @@ internal static class ServiceInstaller
         services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
-            options.ExpireTimeSpan = TimeSpan.FromMinutes(configuration.GetValue<int>("Cookie:ExpirationTime"));
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
             options.SlidingExpiration = true;
             options.LoginPath = "/Identity/Account/Login";
             options.AccessDeniedPath = "/Identity/Account/AccessDenied";
             options.SlidingExpiration = true;
             options.LogoutPath = "/Identity/Account/Logout";
+            options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
         });
     }
 
@@ -319,9 +331,10 @@ internal static class ServiceInstaller
 
     private static void ConfigureDiagnostics(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
-        services.AddSerilog((_, config) =>
+        services.AddSerilog((services, options) =>
         {
-            config.ReadFrom.Configuration(configuration)
+            options.ReadFrom.Configuration(configuration)
+                .ReadFrom.Services(services)
                 .Enrich.FromLogContext();
         });
 
@@ -344,17 +357,6 @@ internal static class ServiceInstaller
 
         services.AddScoped<RequestContextLoggingMiddleware>();
         services.AddScoped<RequestTimeLoggingMiddleware>();
-
-        services.AddLogging(config =>
-        {
-            config.AddOpenTelemetry(o =>
-            {
-                o.SetResourceBuilder(
-                    ResourceBuilder.CreateDefault()
-                        .AddService(DiagnosticsConfiguration.ServiceName))
-                .AddOtlpExporter();
-            });
-        });
 
         services.AddOpenTelemetry()
             .ConfigureResource(resource =>
@@ -380,10 +382,7 @@ internal static class ServiceInstaller
                         "System.Net.Http",
                         "Microsoft.AspNetCore.Server.Kestrel",
                         "ModularMonolith.Web")
-                    .AddOtlpExporter(options =>
-                    {
-                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-                    });
+                    .AddOtlpExporter();
             })
             .WithTracing(b =>
             {
@@ -392,10 +391,7 @@ internal static class ServiceInstaller
                     .AddNpgsql()
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddOtlpExporter(options =>
-                    {
-                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-                    });
+                    .AddOtlpExporter();
 
                 if (environment.IsDevelopment())
                 {
@@ -406,7 +402,7 @@ internal static class ServiceInstaller
 
     private static void ConfigureResiliency(IServiceCollection services)
     {
-        services.AddLoadShedding((provider, options) =>
+        services.AddLoadShedding((_, options) =>
         {
             options.SubscribeEvents(events =>
             {

@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace ModularMonolith.Users.Core.UserAggregate;
+﻿namespace ModularMonolith.Users.Core.UserAggregate;
 
 public readonly partial struct UserName : IEquatable<UserName>
 {
@@ -24,14 +22,14 @@ public readonly partial struct UserName : IEquatable<UserName>
             throw new ArgumentException("UserName must be at least 3 characters long", nameof(value));
         }
 
-        if (value.Length > 20)
+        if (value.Length > 50)
         {
-            throw new ArgumentException("UserName must be at most 20 characters long", nameof(value));
+            throw new ArgumentException("UserName must be at most 50 characters long", nameof(value));
         }
 
-        if (!UserNameRegex().IsMatch(value))
+        if (!value.Contains('@'))
         {
-            throw new ArgumentException("UserName must contain only letters and numbers", nameof(value));
+            throw new ArgumentException("UserName must be a valid email address", nameof(value));
         }
 
         return new(value);
@@ -63,7 +61,4 @@ public readonly partial struct UserName : IEquatable<UserName>
     public override readonly string ToString() => Value;
 
     public static implicit operator string(UserName userName) => userName.Value;
-
-    [GeneratedRegex(@"^[a-zA-Z0-9]+$")]
-    private static partial Regex UserNameRegex();
 }
