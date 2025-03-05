@@ -2,15 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account
@@ -105,7 +100,9 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
                 throw new InvalidOperationException($"Unable to load two-factor authentication user.");
             }
 
-            var authenticatorCode = Input.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
+            var authenticatorCode = Input.TwoFactorCode
+                .Replace(" ", string.Empty, StringComparison.InvariantCulture)
+                .Replace("-", string.Empty, StringComparison.InvariantCulture);
 
             var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, Input.RememberMachine);
 

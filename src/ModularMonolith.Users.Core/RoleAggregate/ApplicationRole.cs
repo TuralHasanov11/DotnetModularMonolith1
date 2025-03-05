@@ -5,9 +5,9 @@ namespace ModularMonolith.Users.Core.RoleAggregate;
 
 public sealed class ApplicationRole : IdentityRole<Guid>
 {
-    public ICollection<ApplicationUserRole> UserRoles { get; set; } = [];
+    public ICollection<ApplicationUserRole> UserRoles { get; } = [];
 
-    public ICollection<ApplicationRoleClaim> RoleClaims { get; set; } = [];
+    public ICollection<ApplicationRoleClaim> RoleClaims { get; } = [];
 
     private ApplicationRole(string name)
     {

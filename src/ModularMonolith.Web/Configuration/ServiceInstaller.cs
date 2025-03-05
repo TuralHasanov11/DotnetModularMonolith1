@@ -1,4 +1,10 @@
-﻿using MassTransit;
+﻿using System.IO.Compression;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Channels;
+using System.Threading.RateLimiting;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
@@ -24,12 +30,6 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using SharedKernel;
-using System.IO.Compression;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Channels;
-using System.Threading.RateLimiting;
 
 namespace ModularMonolith.Web.Configuration;
 
@@ -50,16 +50,16 @@ internal static class ServiceInstaller
         ConfigureResiliency(services);
         ConfigureInternationalization(services);
         ConfigureErrorHandling(services);
-        ConfigureHost(services, configuration);
         ConfigureDbContext(services, configuration, environment);
-        ConfigureIdentity(services, configuration);
-        ConfigureCookie(services, configuration);
+        ConfigureIdentity(services);
+        ConfigureCookie(services);
         ConfigureJson(services);
         ConfigureCache(services);
         ConfigureMessaging(services, configuration);
         ConfigureEmail(services, configuration);
         ConfigureCqrs(services);
         ConfigureHealthChecks(services);
+        ConfigureHost(services, configuration);
     }
 
     private static void ConfigureDbContext(
@@ -155,8 +155,7 @@ internal static class ServiceInstaller
     }
 
     private static void ConfigureIdentity(
-        IServiceCollection services,
-        IConfiguration configuration)
+        IServiceCollection services)
     {
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
@@ -200,12 +199,20 @@ internal static class ServiceInstaller
                 SingleReader = true,
                 AllowSynchronousContinuations = false,
             }));
+
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.HttpOnly = true;
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+            options.SlidingExpiration = true;
+            options.LoginPath = "/Identity/Account/Login";
+            options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+            options.SlidingExpiration = true;
+            options.LogoutPath = "/Identity/Account/Logout";
+            options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
+        });
     }
 
-    private static void ConfigureHost(IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<HostOptions>(configuration.GetSection("Host"));
-    }
     private static void ConfigureErrorHandling(IServiceCollection services)
     {
         services.AddProblemDetails(options =>
@@ -274,26 +281,20 @@ internal static class ServiceInstaller
         });
     }
 
-    private static void ConfigureCookie(IServiceCollection services, IConfiguration configuration)
+    private static void ConfigureCookie(IServiceCollection services)
     {
         services.AddSession();
 
-        services.ConfigureApplicationCookie(options =>
-        {
-            options.Cookie.HttpOnly = true;
-            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-            options.SlidingExpiration = true;
-            options.LoginPath = "/Identity/Account/Login";
-            options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-            options.SlidingExpiration = true;
-            options.LogoutPath = "/Identity/Account/Logout";
-            options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
-        });
+
     }
 
     private static void ConfigureAntiforgeryProtection(IServiceCollection services)
     {
-        services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
+        services.AddAntiforgery(options =>
+        {
+            options.HeaderName = "X-XSRF-TOKEN";
+            options.SuppressXFrameOptionsHeader = true;
+        });
     }
 
     private static void ConfigureEndpoints(IServiceCollection services)
@@ -329,7 +330,10 @@ internal static class ServiceInstaller
         });
     }
 
-    private static void ConfigureDiagnostics(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
+    private static void ConfigureDiagnostics(
+        IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
         services.AddSerilog((services, options) =>
         {
@@ -435,5 +439,10 @@ internal static class ServiceInstaller
                     options.QueueLimit = 2;
                 });
         });
+    }
+
+    private static void ConfigureHost(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<HostOptions>(configuration.GetSection("Host"));
     }
 }

@@ -61,7 +61,7 @@ public class AuditInterceptor(List<AuditEntry> auditEntryList, IPublishEndpoint 
             if (_auditEntries.Count > 0)
             {
                 _auditEntries.Clear();
-                await _publishEndpoint.Publish(new AuditTrailMessage { Entries = _auditEntries }, cancellationToken);
+                await _publishEndpoint.Publish(new AuditTrailMessage(_auditEntries), cancellationToken);
             }
         }
 
@@ -86,7 +86,7 @@ public class AuditInterceptor(List<AuditEntry> auditEntryList, IPublishEndpoint 
             if (_auditEntries.Count > 0)
             {
                 _auditEntries.Clear();
-                await _publishEndpoint.Publish(new AuditTrailMessage { Entries = _auditEntries }, cancellationToken);
+                await _publishEndpoint.Publish(new AuditTrailMessage(_auditEntries), cancellationToken);
             }
         }
     }

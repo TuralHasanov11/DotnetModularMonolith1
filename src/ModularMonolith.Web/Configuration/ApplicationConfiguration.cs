@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using ModularMonolith.Users.Core.RoleAggregate;
 using ModularMonolith.Users.Core.UserAggregate;
@@ -22,7 +22,8 @@ public static class ApplicationConfiguration
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
-        //app.UseAntiforgery();
+        app.UseAntiforgery();
+        app.UseMiddleware<ContentTypeOptionsMiddleware>();
 
         app.UseRouting();
         app.UseRateLimiter();
@@ -99,7 +100,7 @@ public static class ApplicationConfiguration
             logger);
     }
 
-    internal static IApplicationBuilder WithHealthChecks(this WebApplication app)
+    private static WebApplication WithHealthChecks(this WebApplication app)
     {
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/live", new HealthCheckOptions
@@ -110,5 +111,3 @@ public static class ApplicationConfiguration
         return app;
     }
 }
-
-

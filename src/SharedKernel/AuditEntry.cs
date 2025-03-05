@@ -16,7 +16,4 @@ public class AuditEntry
 }
 
 
-public record AuditTrailMessage
-{
-    public List<AuditEntry> Entries { get; set; } = [];
-}
+public record AuditTrailMessage(List<AuditEntry> Entries);

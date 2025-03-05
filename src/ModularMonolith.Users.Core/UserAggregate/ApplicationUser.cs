@@ -12,13 +12,13 @@ public sealed class ApplicationUser : IdentityUser<Guid>
         UserAggregate.FirstName.From(FirstName),
         UserAggregate.LastName.From(LastName));
 
-    public ICollection<ApplicationUserClaim> Claims { get; set; } = [];
+    public ICollection<ApplicationUserClaim> Claims { get; } = [];
 
-    public ICollection<ApplicationUserLogin> Logins { get; set; } = [];
+    public ICollection<ApplicationUserLogin> Logins { get; } = [];
 
-    public ICollection<ApplicationUserToken> Tokens { get; set; } = [];
+    public ICollection<ApplicationUserToken> Tokens { get; } = [];
 
-    public ICollection<ApplicationUserRole> UserRoles { get; set; } = [];
+    public ICollection<ApplicationUserRole> UserRoles { get; } = [];
 
     private ApplicationUser(
         string userName,

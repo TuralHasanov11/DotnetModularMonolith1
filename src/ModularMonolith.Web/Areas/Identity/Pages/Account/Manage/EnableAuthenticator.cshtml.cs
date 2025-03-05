@@ -2,17 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
 using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
@@ -113,7 +109,9 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
             }
 
             // Strip spaces and hyphens
-            var verificationCode = Input.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
+            var verificationCode = Input.Code
+                .Replace(" ", string.Empty, StringComparison.InvariantCulture)
+                .Replace("-", string.Empty, StringComparison.InvariantCulture);
 
             var is2faTokenValid = await _userManager.VerifyTwoFactorTokenAsync(
                 user, _userManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);

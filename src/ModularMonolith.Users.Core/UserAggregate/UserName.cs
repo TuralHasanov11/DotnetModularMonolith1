@@ -27,7 +27,7 @@ public readonly partial struct UserName : IEquatable<UserName>
             throw new ArgumentException("UserName must be at most 50 characters long", nameof(value));
         }
 
-        if (!value.Contains('@'))
+        if (!value.Contains('@', StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException("UserName must be a valid email address", nameof(value));
         }

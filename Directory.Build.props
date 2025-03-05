@@ -3,4 +3,11 @@
         <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     </PropertyGroup>
+
+	<ItemGroup Condition="'$(MSBuildProjectExtension)' != '.dcproj'">
+	  <PackageReference Include="StyleCop.Analyzers">
+		<PrivateAssets>all</PrivateAssets>
+		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	</ItemGroup>
 </Project>
