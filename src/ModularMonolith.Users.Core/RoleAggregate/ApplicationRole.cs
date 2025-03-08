@@ -3,7 +3,7 @@ using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Users.Core.RoleAggregate;
 
-public sealed class ApplicationRole : IdentityRole<Guid>
+public sealed class ApplicationRole : IdentityRole<IdentityId>
 {
     public ICollection<ApplicationUserRole> UserRoles { get; } = [];
 
@@ -11,6 +11,7 @@ public sealed class ApplicationRole : IdentityRole<Guid>
 
     private ApplicationRole(string name)
     {
+        Id = new();
         Name = name;
     }
 

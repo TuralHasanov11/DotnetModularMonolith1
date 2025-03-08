@@ -53,7 +53,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: "modularmonolith.pgadmin"
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@modularmonolith.com
+      - PGADMIN_DEFAULT_EMAIL=admin@postgres.com
       - PGADMIN_DEFAULT_PASSWORD=postgres
     ports:
       - "5050:80"

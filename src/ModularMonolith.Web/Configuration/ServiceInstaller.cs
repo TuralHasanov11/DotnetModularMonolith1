@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using System.Threading.RateLimiting;
+using Hangfire;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
@@ -16,8 +17,10 @@ using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.OpenApi.Models;
+using ModularMonolith.Users.Core.Outbox;
 using ModularMonolith.Users.Core.RoleAggregate;
 using ModularMonolith.Users.Core.UserAggregate;
 using ModularMonolith.Users.Infrastructure;
@@ -60,6 +63,8 @@ internal static class ServiceInstaller
         ConfigureCqrs(services);
         ConfigureHealthChecks(services);
         ConfigureHost(services, configuration);
+
+        services.AddFeatureManagement(configuration.GetSection("FeatureFlags"));
     }
 
     private static void ConfigureDbContext(
@@ -71,6 +76,18 @@ internal static class ServiceInstaller
             ?? throw new InvalidOperationException("Connection string 'Database' not found.");
 
         services.ConfigureUsersDbContext(connectionString, environment.IsDevelopment());
+
+        services.AddScoped<IOutboxProcessor, OutboxProcessor>();
+
+        services.AddHangfire(options =>
+        {
+            options.UseInMemoryStorage();
+        });
+
+        services.AddHangfireServer(options =>
+        {
+            options.SchedulePollingInterval = TimeSpan.FromSeconds(10);
+        });
     }
 
     private static void ConfigureCqrs(IServiceCollection services)
@@ -191,14 +208,14 @@ internal static class ServiceInstaller
                 policy => policy.RequireRole(ApplicationRoles.Administrator));
         });
 
-        services.AddHostedService<EmailProcessor>();
-
-        services.AddSingleton<Channel<EmailRequest>>(
+        services.AddSingleton(
             _ => Channel.CreateUnbounded<EmailRequest>(new UnboundedChannelOptions
             {
                 SingleReader = true,
                 AllowSynchronousContinuations = false,
             }));
+
+        services.AddHostedService<EmailBackgroundProcessor>();
 
         services.ConfigureApplicationCookie(options =>
         {
@@ -444,5 +461,7 @@ internal static class ServiceInstaller
     private static void ConfigureHost(IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<HostOptions>(configuration.GetSection("Host"));
+
+        services.AddScoped<ContentTypeOptionsMiddleware>();
     }
 }

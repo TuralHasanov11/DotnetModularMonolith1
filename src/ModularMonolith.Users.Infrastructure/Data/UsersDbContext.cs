@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ModularMonolith.Users.Core.Outbox;
 using ModularMonolith.Users.Core.RoleAggregate;
 using ModularMonolith.Users.Core.UserAggregate;
 using SharedKernel;
@@ -7,13 +8,15 @@ using SharedKernel;
 namespace ModularMonolith.Users.Infrastructure.Data;
 
 public class UsersDbContext(DbContextOptions<UsersDbContext> options)
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid,
+    : IdentityDbContext<ApplicationUser, ApplicationRole, IdentityId,
         ApplicationUserClaim, ApplicationUserRole, ApplicationUserLogin,
         ApplicationRoleClaim, ApplicationUserToken>(options)
 {
     public const string Schema = "Users";
 
     public DbSet<AuditEntry> AuditEntries { get; set; }
+
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

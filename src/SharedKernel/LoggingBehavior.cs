@@ -1,6 +1,6 @@
-﻿using MediatR;
+﻿using System.Diagnostics;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace SharedKernel;
 
@@ -10,25 +10,37 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<Mediator> logger)
 {
     private readonly ILogger<Mediator> _logger = logger;
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (_logger.IsEnabled(LogLevel.Information))
-        {
-            _logger.LogInformation("Handling {RequestName}", typeof(TRequest).Name);
-        }
+        _logger.LogHandlingRequest(typeof(TRequest).Name);
 
         var timestamp = Stopwatch.GetTimestamp();
 
         var response = await next();
 
-        _logger.LogInformation(
-            "Handled {RequestName} with {Response} in {ElapsedTime} ms",
+        _logger.LogHandledRequest(
             typeof(TRequest).Name,
-            response,
-            Stopwatch.GetElapsedTime(timestamp));
+            typeof(TResponse).Name,
+            Stopwatch.GetTimestamp() - timestamp);
 
         return response;
     }
+}
+
+public static partial class LoggingBehaviorLogger
+{
+    [LoggerMessage(LogLevel.Information, "Handling {RequestName}")]
+    public static partial void LogHandlingRequest(this ILogger<Mediator> logger, string requestName);
+
+    [LoggerMessage(LogLevel.Information, "Handled {RequestName} with {ResponseName} in {ElapsedTime} ms")]
+    public static partial void LogHandledRequest(
+        this ILogger<Mediator> logger,
+        string requestName,
+        string responseName,
+        long elapsedTime);
 }

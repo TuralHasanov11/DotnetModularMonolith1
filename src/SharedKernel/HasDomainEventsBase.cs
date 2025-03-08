@@ -2,6 +2,11 @@
 
 namespace SharedKernel;
 
+public interface IHasDomainEvents
+{
+    IReadOnlyCollection<DomainEventBase> DomainEvents { get; }
+}
+
 public abstract class HasDomainEventsBase : IHasDomainEvents
 {
     private readonly List<DomainEventBase> _domainEvents = [];

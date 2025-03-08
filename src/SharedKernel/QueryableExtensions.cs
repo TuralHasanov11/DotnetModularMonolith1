@@ -9,11 +9,6 @@ public static class QueryableExtensions
         bool condition,
         Expression<Func<T, bool>> predicate)
     {
-        if (condition)
-        {
-            return queryable.Where(predicate);
-        }
-
-        return queryable;
+        return condition ? queryable.Where(predicate) : queryable;
     }
 }

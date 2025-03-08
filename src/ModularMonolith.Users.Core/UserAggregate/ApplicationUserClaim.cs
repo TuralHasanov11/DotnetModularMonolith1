@@ -2,7 +2,7 @@
 
 namespace ModularMonolith.Users.Core.UserAggregate;
 
-public class ApplicationUserClaim : IdentityUserClaim<Guid>
+public class ApplicationUserClaim : IdentityUserClaim<IdentityId>
 {
-    public required ApplicationUser User { get; set; }
+    public ApplicationUser User { get; }
 }

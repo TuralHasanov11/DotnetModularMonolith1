@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using ModularMonolith.Users.Core.Outbox;
 using SharedKernel;
 
 namespace ModularMonolith.Users.Infrastructure.Data;
@@ -15,7 +16,7 @@ public static class UsersDbContextExtensions
     {
         services.AddKeyedScoped<List<AuditEntry>>("Audit", (_, _) => []);
 
-        services.AddDbContext<UsersDbContext>((sp, options) =>
+        services.AddDbContextPool<UsersDbContext>((sp, options) =>
         {
             options.UseNpgsql(
                 connectionString,
@@ -33,6 +34,10 @@ public static class UsersDbContextExtensions
                     .EnableDetailedErrors();
             }
         });
+    }
 
+    public static void AddTransactionMessage<T>(this UsersDbContext dbContext, T message) where T : notnull
+    {
+        dbContext.OutboxMessages.Add(OutboxMessage.Create(message, DateTime.UtcNow));
     }
 }

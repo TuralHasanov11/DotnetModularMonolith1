@@ -12,6 +12,13 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
     {
         builder.ToTable(TableName);
 
+        builder.HasKey(u => u.Id);
+
+        builder.Property(u => u.Id)
+            .HasConversion(
+                id => id.Value,
+                value => IdentityId.From(value));
+
         builder.Property(u => u.FirstName)
             .IsRequired()
             .HasMaxLength(50);

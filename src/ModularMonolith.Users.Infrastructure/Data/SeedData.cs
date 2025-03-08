@@ -16,11 +16,7 @@ public class SeedData
         IConfiguration configuration,
         ILogger<SeedData> logger)
     {
-        var isCreated = await dbContext.Database.EnsureCreatedAsync();
-
-        logger.LogInformation("Database created: {IsCreated}", isCreated);
-
-        await dbContext.Database.MigrateAsync();
+        await dbContext.Database.EnsureCreatedAsync();
 
         await AddRoles(roleManager, logger);
         await AddSuperUser(userManager, configuration, logger);
@@ -59,9 +55,6 @@ public class SeedData
                 }
 
                 await userManager.AddToRoleAsync(admin, ApplicationRoles.Administrator);
-                await userManager.AddToRoleAsync(admin, ApplicationRoles.Instructor);
-                await userManager.AddToRoleAsync(admin, ApplicationRoles.Student);
-                await userManager.AddToRoleAsync(admin, ApplicationRoles.Editor);
 
                 logger.LogInformation("Admin with Email = {Email} created", email);
             }
@@ -77,9 +70,6 @@ public class SeedData
         if (!await roleManager.Roles.AnyAsync())
         {
             await AddRole(roleManager, ApplicationRoles.Administrator, logger);
-            await AddRole(roleManager, ApplicationRoles.Student, logger);
-            await AddRole(roleManager, ApplicationRoles.Instructor, logger);
-            await AddRole(roleManager, ApplicationRoles.Editor, logger);
         }
     }
 

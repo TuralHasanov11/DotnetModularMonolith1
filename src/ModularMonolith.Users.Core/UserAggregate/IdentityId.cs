@@ -2,8 +2,6 @@
 
 public readonly struct IdentityId : IEquatable<IdentityId>
 {
-    public readonly Guid Value { get; }
-
     public IdentityId()
     {
         Value = Guid.CreateVersion7();
@@ -14,9 +12,26 @@ public readonly struct IdentityId : IEquatable<IdentityId>
         Value = value;
     }
 
+    public readonly Guid Value { get; }
+
+    public static implicit operator Guid(IdentityId identityId) => identityId.Value;
+
+    public static bool operator ==(IdentityId left, IdentityId right) => left.Equals(right);
+
+    public static bool operator !=(IdentityId left, IdentityId right) => !left.Equals(right);
+
+    public static bool operator ==(IdentityId left, string right) => left.Equals(right);
+
+    public static bool operator !=(IdentityId left, string right) => !left.Equals(right);
+
+    public static bool operator ==(string left, IdentityId right) => right.Equals(left);
+
+    public static bool operator !=(string left, IdentityId right) => !right.Equals(left);
+
+
     public static IdentityId From(Guid value)
     {
-        if (Guid.Empty == value)
+        if (value == Guid.Empty)
         {
             throw new ArgumentException("IdentityId cannot be empty", nameof(value));
         }
@@ -33,21 +48,7 @@ public readonly struct IdentityId : IEquatable<IdentityId>
 
     public override readonly bool Equals(object? obj) => obj is IdentityId other && Equals(other);
 
-    public static bool operator ==(IdentityId left, IdentityId right) => left.Equals(right);
-
-    public static bool operator !=(IdentityId left, IdentityId right) => !left.Equals(right);
-
-    public static bool operator ==(IdentityId left, string right) => left.Equals(right);
-
-    public static bool operator !=(IdentityId left, string right) => !left.Equals(right);
-
-    public static bool operator ==(string left, IdentityId right) => right.Equals(left);
-
-    public static bool operator !=(string left, IdentityId right) => !right.Equals(left);
-
     public override readonly int GetHashCode() => Value.GetHashCode();
 
     public override readonly string ToString() => Value.ToString();
-
-    public static implicit operator Guid(IdentityId identityId) => identityId.Value;
 }

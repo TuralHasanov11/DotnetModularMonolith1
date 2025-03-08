@@ -8,6 +8,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="FluentEmail.Smtp" />
+		<PackageReference Include="Hangfire.AspNetCore" />
+		<PackageReference Include="Hangfire.InMemory" />
 		<PackageReference Include="MassTransit.RabbitMQ" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />

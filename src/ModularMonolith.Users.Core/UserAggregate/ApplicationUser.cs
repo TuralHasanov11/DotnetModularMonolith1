@@ -2,7 +2,7 @@
 
 namespace ModularMonolith.Users.Core.UserAggregate;
 
-public sealed class ApplicationUser : IdentityUser<Guid>
+public sealed class ApplicationUser : IdentityUser<IdentityId>
 {
     public string FirstName { get; private set; }
 
@@ -26,6 +26,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>
         string firstName,
         string lastName)
     {
+        Id = new();
         UserName = userName;
         Email = email;
         FirstName = firstName;

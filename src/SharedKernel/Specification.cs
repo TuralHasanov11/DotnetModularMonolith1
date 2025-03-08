@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Query;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace SharedKernel;
 
@@ -20,10 +20,6 @@ public abstract class Specification<TEntity>(
 
     public Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? IncludeExpression { get; protected set; }
 
-    public Expression<Func<TEntity, object>>? OrderByExpression { get; private set; }
-
-    public Expression<Func<TEntity, object>>? OrderByDescendingExpression { get; private set; }
-
     public Specification<TEntity> AddInclude(Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includeExpression)
     {
         if (includeExpression is null)
@@ -32,32 +28,6 @@ public abstract class Specification<TEntity>(
         }
 
         IncludeExpression = includeExpression;
-
-        return this;
-    }
-
-    protected Specification<TEntity> AddOrderBy(
-        Expression<Func<TEntity, object>> orderByExpression)
-    {
-        if (orderByExpression is null)
-        {
-            throw new InvalidOperationException("OrderByExpression is null");
-        }
-
-        OrderByExpression = orderByExpression;
-
-        return this;
-    }
-
-    protected Specification<TEntity> AddOrderByDescending(
-        Expression<Func<TEntity, object>> orderByDescendingExpression)
-    {
-        if (orderByDescendingExpression is null)
-        {
-            throw new InvalidOperationException("OrderByDescendingExpression is null");
-        }
-
-        OrderByDescendingExpression = orderByDescendingExpression;
 
         return this;
     }
@@ -76,28 +46,30 @@ public abstract class Specification<TEntity>(
 
         return this;
     }
-
-    public static Specification<TEntity> operator &(
-        Specification<TEntity> specification1,
-        Specification<TEntity> specification2)
-    {
-        return new AndSpecification<TEntity>(specification1, specification2);
-    }
 }
 
-
-public class AndSpecification<TEntity> : Specification<TEntity> where TEntity : class
+public static class SpecificationEvaluator
 {
-    public AndSpecification(Specification<TEntity> specification1, Specification<TEntity> specification2)
+    public static IQueryable<TEntity> GetQuery<TEntity>(
+        this IQueryable<TEntity> queryable,
+        Specification<TEntity> specification)
+        where TEntity : class
     {
-        for (int i = 0; i < specification1.Criteria.Count(); i++)
+        if (specification.Criteria is not null)
         {
-            AddCriteria(specification1.Criteria[i], specification1.CriteriaCondition[i]);
+            for (int i = 0; i < specification.Criteria.Count; i++)
+            {
+                queryable = queryable.WhereIf(
+                    specification.CriteriaCondition[i],
+                    specification.Criteria[i]);
+            }
         }
 
-        for (int i = 0; i < specification2.Criteria.Count(); i++)
+        if (specification.IncludeExpression is not null)
         {
-            AddCriteria(specification2.Criteria[i], specification2.CriteriaCondition[i]);
+            queryable = specification.IncludeExpression(queryable);
         }
+
+        return queryable;
     }
 }

@@ -2,14 +2,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
+using Microsoft.FeatureManagement;
 using ModularMonolith.Users.Core.UserAggregate;
+using ModularMonolith.Web.Configuration;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
 {
@@ -18,15 +17,18 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<DeletePersonalDataModel> _logger;
+        private readonly IFeatureManager _featureManager
 
         public DeletePersonalDataModel(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<DeletePersonalDataModel> logger)
+            ILogger<DeletePersonalDataModel> logger,
+            IFeatureManager featureManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _featureManager = featureManager;
         }
 
         /// <summary>
@@ -59,6 +61,11 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnGet()
         {
+            if (!await _featureManager.IsEnabledAsync(FeatureFlags.DeleteUserPersonalData))
+            {
+                return Redirect("~/");
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
@@ -71,6 +78,11 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnPostAsync()
         {
+            if (!await _featureManager.IsEnabledAsync(FeatureFlags.DeleteUserPersonalData))
+            {
+                return Redirect("~/");
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {

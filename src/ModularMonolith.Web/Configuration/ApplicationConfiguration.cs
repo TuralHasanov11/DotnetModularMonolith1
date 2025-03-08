@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using ModularMonolith.Users.Core.RoleAggregate;
@@ -51,6 +52,12 @@ public static class ApplicationConfiguration
                .RequireAuthorization(Policies.ApiTesterPolicy)
                .CacheOutput(Policies.OpenApiCachePolicy);
 
+            app.UseHangfireDashboard(options: new DashboardOptions
+            {
+                Authorization = [],
+                DarkModeEnabled = false,
+            });
+
             app.WithSwagger();
 
             app.UseMiddleware<RequestTimeLoggingMiddleware>();
@@ -58,8 +65,9 @@ public static class ApplicationConfiguration
             await app.InitializeDatabase();
         }
 
-
         app.WithHealthChecks();
+
+        app.UseBackgroundJobs();
 
         app.MapControllerRoute(
             name: "default",

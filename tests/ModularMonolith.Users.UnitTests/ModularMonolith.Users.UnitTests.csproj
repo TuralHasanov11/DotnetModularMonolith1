@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ModularMonolith.Users.Contracts\ModularMonolith.Users.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\ModularMonolith.Users.Core\ModularMonolith.Users.Core.csproj" />
+    <ProjectReference Include="..\..\src\ModularMonolith.Users.Infrastructure\ModularMonolith.Users.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ModularMonolith.Users.UseCases\ModularMonolith.Users.UseCases.csproj" />
+    <ProjectReference Include="..\..\src\ModularMonolith.Users.Web\ModularMonolith.Users.Web.csproj" />
+    <ProjectReference Include="..\..\src\ModularMonolith.Web\ModularMonolith.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
