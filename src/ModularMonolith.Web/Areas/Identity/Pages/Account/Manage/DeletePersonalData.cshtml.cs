@@ -17,7 +17,7 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<DeletePersonalDataModel> _logger;
-        private readonly IFeatureManager _featureManager
+        private readonly IFeatureManager _featureManager;
 
         public DeletePersonalDataModel(
             UserManager<ApplicationUser> userManager,

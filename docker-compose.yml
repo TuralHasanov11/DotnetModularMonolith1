@@ -11,7 +11,7 @@ services:
     # networks:
     #   - dotnetmodularmonolith
     depends_on:
-     - modularmonolith.database
+     - modularmonolith.postgres
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://modularmonolith.seq:5341/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
@@ -37,9 +37,9 @@ services:
     # networks:
     #   - dotnetmodularmonolith
 
-  modularmonolith.database:
+  modularmonolith.postgres:
     image: postgres:latest
-    container_name: "modularmonolith.database"
+    container_name: "modularmonolith.postgres"
     environment:
       - POSTGRES_DB=modularmonolith
       - POSTGRES_USER=postgres
@@ -60,7 +60,7 @@ services:
     volumes:
       - ./.containers/pgadmin:/var/lib/pgadmin
     depends_on:
-      - modularmonolith.database
+      - modularmonolith.postgres
 
   modularmonolith.rabbitmq:
     image: rabbitmq:4.0-management

@@ -2,12 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
 using ModularMonolith.Users.Core.UserAggregate;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
@@ -83,6 +80,9 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account.Manage
             }
 
             await _signInManager.ForgetTwoFactorClientAsync();
+
+            _logger.LogInformation("User with Id '{UserId}' has forgotten the current browser with 2FA.", _userManager.GetUserId(User));
+
             StatusMessage = "The current browser has been forgotten. When you login again from this browser you will be prompted for your 2fa code.";
             return RedirectToPage();
         }

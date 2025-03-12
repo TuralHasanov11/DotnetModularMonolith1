@@ -2,7 +2,4 @@
 
 namespace SharedKernel;
 
-public abstract record DomainEventBase : INotification
-{
-    public DateTime OccurredOnUtc { get; } = DateTime.UtcNow;
-}
+public abstract record DomainEventBase(DateTime OccurredOnUtc) : INotification;

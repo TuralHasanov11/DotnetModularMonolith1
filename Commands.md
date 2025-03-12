@@ -60,4 +60,20 @@ dotnet test --filter <ServiceName>~.UnitTests --no-build --verbosity normal
 ```
 
 
+### Kubernets
+```sh
+kubectl apply -f k8s/modularmonolith-namespace.yaml
+kubectl apply -f k8s/postgres-secret.yaml
+kubectl apply -f k8s/pgadmin-secret.yaml
+kubectl apply -f k8s/postgres-configmap.yaml
+kubectl apply -f k8s/postgres-pvc.yaml
+kubectl apply -f k8s/postgres-deployment.yaml
+kubectl apply -f k8s/pgadmin-deployment.yaml
+kubectl apply -f k8s/web-deployment.yaml
+kubectl apply -f k8s/ingress-service.yaml
+```
+
+
+
+
 

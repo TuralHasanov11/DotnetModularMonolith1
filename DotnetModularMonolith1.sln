@@ -8,6 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Commands.md = Commands.md
+		deploy.sh = deploy.sh
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
 		README.md = README.md
@@ -40,6 +41,21 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{95A06263-F7A4-485A-8AF2-A0AE6558B158}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModularMonolith.Users.UnitTests", "tests\ModularMonolith.Users.UnitTests\ModularMonolith.Users.UnitTests.csproj", "{68F36620-0192-401A-A5CC-BA87379FAD57}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{BE0A3AD3-57B7-4967-827B-E747552F4342}"
+	ProjectSection(SolutionItems) = preProject
+		k8s\ingress-service.yaml = k8s\ingress-service.yaml
+		k8s\modularmonolith-namespace.yaml = k8s\modularmonolith-namespace.yaml
+		k8s\pgadmin-deployment.yaml = k8s\pgadmin-deployment.yaml
+		k8s\pgadmin-secret.yaml = k8s\pgadmin-secret.yaml
+		k8s\postgres-configmap.yaml = k8s\postgres-configmap.yaml
+		k8s\postgres-deployment.yaml = k8s\postgres-deployment.yaml
+		k8s\postgres-pvc.yaml = k8s\postgres-pvc.yaml
+		k8s\postgres-secret.yaml = k8s\postgres-secret.yaml
+		k8s\web-deployment.yaml = k8s\web-deployment.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModularMonolith.SharedKernel.UnitTests", "tests\ModularMonolith.SharedKernel.UnitTests\ModularMonolith.SharedKernel.UnitTests.csproj", "{46644912-1C85-4C13-9AF9-52C2EF789B57}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +99,10 @@ Global
 		{68F36620-0192-401A-A5CC-BA87379FAD57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68F36620-0192-401A-A5CC-BA87379FAD57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68F36620-0192-401A-A5CC-BA87379FAD57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46644912-1C85-4C13-9AF9-52C2EF789B57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46644912-1C85-4C13-9AF9-52C2EF789B57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46644912-1C85-4C13-9AF9-52C2EF789B57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46644912-1C85-4C13-9AF9-52C2EF789B57}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,6 +117,7 @@ Global
 		{4908B130-E060-4494-93A3-9A2CEF6A946F} = {B1219D7D-0740-4332-B83C-194CE0C8A764}
 		{B1219D7D-0740-4332-B83C-194CE0C8A764} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{68F36620-0192-401A-A5CC-BA87379FAD57} = {95A06263-F7A4-485A-8AF2-A0AE6558B158}
+		{46644912-1C85-4C13-9AF9-52C2EF789B57} = {95A06263-F7A4-485A-8AF2-A0AE6558B158}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EE819821-BF38-43CB-8F38-FB6CFB433A8A}
