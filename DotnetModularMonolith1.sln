@@ -44,7 +44,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModularMonolith.Users.UnitT
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{BE0A3AD3-57B7-4967-827B-E747552F4342}"
 	ProjectSection(SolutionItems) = preProject
-		k8s\ingress-service.yaml = k8s\ingress-service.yaml
 		k8s\modularmonolith-namespace.yaml = k8s\modularmonolith-namespace.yaml
 		k8s\pgadmin-deployment.yaml = k8s\pgadmin-deployment.yaml
 		k8s\pgadmin-secret.yaml = k8s\pgadmin-secret.yaml

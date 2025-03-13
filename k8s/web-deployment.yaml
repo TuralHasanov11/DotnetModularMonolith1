@@ -6,7 +6,7 @@ metadata:
     app: web
   namespace: modularmonolith
 spec:
-  ingressClassName: ingress-service
+  ingressClassName: web-ingress
   replicas: 1
   selector:
     matchLabels:
@@ -45,3 +45,24 @@ spec:
     port: 80
     targetPort: 5101
   type: LoadBalancer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-ingress
+  namespace: modularmonolith
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+spec:
+  rules:
+  - host: modularmonolith.local
+    http:
+      paths:
+      - path: /?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80

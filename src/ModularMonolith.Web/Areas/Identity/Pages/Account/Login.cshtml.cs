@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using ModularMonolith.Users.Core.UserAggregate;
-using ModularMonolith.Web.Configuration;
+using ModularMonolith.Web.Metrics;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account
 {
@@ -147,6 +147,9 @@ namespace ModularMonolith.Web.Areas.Identity.Pages.Account
         {
             var labels = new KeyValuePair<string, object?>(DiagnosticsConfiguration.Names.UserId, userId);
             DiagnosticsConfiguration.UsersLoginCount.Add(1, labels);
+
+            var tag = new KeyValuePair<string, object?>("identity", nameof(LoginModel));
+            DiagnosticsConfiguration.PageSuccessCounter.Add(1, tag);
         }
     }
 

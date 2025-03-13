@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using ModularMonolith.Users.Core.UserAggregate;
 using ModularMonolith.Users.Infrastructure;
-using ModularMonolith.Web.Configuration;
+using ModularMonolith.Web.Metrics;
 
 namespace ModularMonolith.Web.Areas.Identity.Pages.Account
 {

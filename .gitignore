@@ -362,6 +362,11 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 efbundle
-migrations.sql
 
 .containers
+
+*.bak
+*.sql
+*.zip
+# secrets
+.env

@@ -26,6 +26,7 @@ using ModularMonolith.Users.Core.UserAggregate;
 using ModularMonolith.Users.Infrastructure;
 using ModularMonolith.Users.Infrastructure.Data;
 using ModularMonolith.Users.Web;
+using ModularMonolith.Web.Metrics;
 using Npgsql;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -388,8 +389,19 @@ internal static class ServiceInstaller
                     .AddAttributes(new Dictionary<string, object>
                     {
                         ["service.name"] = "ModularMonolith",
+                        ["machine.name"] = Environment.MachineName,
                         // endpoint and protocol are optional
                     });
+
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+                if (environment is not null)
+                {
+                    resource.AddAttributes(new Dictionary<string, object>
+                    {
+                        ["environment.name"] = environment,
+                    });
+                }
             })
             .WithMetrics(b =>
             {
