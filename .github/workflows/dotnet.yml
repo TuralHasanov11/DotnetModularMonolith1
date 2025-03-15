@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -34,3 +33,16 @@ jobs:
     #    dotnet ef migrations bundle --project ModularMonolith.Users.Infrastructure --startup-project  ModularMonolith.Web --output efbundle
     #- name: Run EF Migrations
     #  run: ./efbundle --connection "${{secrets.CONNECTION_STRINGS_DATABASE}}"
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      run: echo "${{secrets.DOCKERHUB_PASSWORD}}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+    - name: Build and push modularmonolithweb image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/modularmonolithweb:latest -f ./src/ModularMonolith.Web/Dockerfile .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/modularmonolithweb:latest

@@ -1,0 +1,28 @@
+﻿@page
+@model IndexModel
+@{
+}
+
+<h1>Accounts</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>UserName</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.Users.Count; i++)
+        {
+            var user = Model.Users[i];
+
+            <tr>
+                <td>@(i + 1)</td>
+                <td>@user.UserName</td>
+                <td>@user.Email</td>
+            </tr>
+        }
+    </tbody>
+</table>
